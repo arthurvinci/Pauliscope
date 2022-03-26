@@ -6,9 +6,14 @@
 #include <Eigen/Dense>
 #include "Sphere.hpp"
 #include "../defs.hpp"
+#include "../primitives/Plane.hpp"
+#include "../primitives/Triangle.hpp"
 
 
-Sphere::Sphere(const Point &p, float radius, bool realInstance) : BoundingVolume(realInstance), m_center(p), m_radius(radius){}
+Sphere::Sphere(const Point &p, float radius, bool realInstance) : BoundingVolume(realInstance), m_center(p), m_radius(radius)
+{
+    assert(m_radius>=0);
+}
 
 const Point &Sphere::getCenter() const{
     return m_center;
@@ -20,7 +25,7 @@ float Sphere::getRadius() const{
 
 bool Sphere::intersects(const Sphere &sp) const noexcept{
     Vector v = m_center - sp.m_center;
-    float dist = dot(v,v);
+    float dist = norm2(v);
 
     float radius_sum = m_radius + sp.m_radius;
     return dist <= radius_sum*radius_sum;
@@ -174,7 +179,7 @@ Sphere::Sphere(const std::vector<Point> &points, bool realInstance) : BoundingVo
         // For debugging purpose only. This should disappear when using release compilation option
         auto dist2 = norm2(m_center-pt);
         auto rad2 = m_radius*m_radius;
-        assert( dist2<= (rad2 + ACCEPTABLE_ERROR));
+        assert( dist2 <= (rad2 + ACCEPTABLE_ERROR));
     }
 
 
@@ -238,8 +243,8 @@ bool Sphere::intersects(const AABB &aabb) const noexcept {
     return false;
 }
 
-bool Sphere::intersects(const BoundingVolume &bv) const noexcept {
-    return bv.intersects(*this);
+bool Sphere::intersects(const Intersectable &intersectable) const noexcept {
+    return intersectable.intersects(*this);
 }
 
 float Sphere::getVolume()
@@ -339,10 +344,12 @@ void Sphere::constructMesh()
 }
 
 
+bool Sphere::intersects(const Plane &plane) const noexcept {
+    // Feature not implemented yet
+    assert(false);
+    return false;
+}
 
-
-
-
-
-
-
+bool Sphere::intersects(const Triangle &tri) const noexcept {
+    return tri.intersects(*this);
+}

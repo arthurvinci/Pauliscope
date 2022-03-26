@@ -3,8 +3,11 @@
 //
 
 #include "Plane.hpp"
+#include "../bounding-volumes/Sphere.hpp"
+#include "../bounding-volumes/AABB.hpp"
+#include "../defs.hpp"
 
-Plane::Plane(const Point &point, const Vector &normal) noexcept : m_normal(normal)
+Plane::Plane(const Point &point, const Vector &normal) noexcept : m_normal(normalize(normal))
 {
     m_d = dot(m_normal, point);
 }
@@ -37,6 +40,15 @@ void Plane::setD(float d) {
     m_d = d;
 }
 
+Point Plane::closestPointToPoint(const Point &p) const noexcept
+{
+    float temp  = dot(m_normal, p) - m_d;
+    return p -temp*m_normal;
+}
+
+float Plane::distanceTo(const Point &p) const noexcept {
+    return dot(m_normal, p);
+}
 
 
 bool operator==(const Plane &  plane1, const Plane & plane2) {
@@ -47,4 +59,45 @@ bool operator==(const Plane &  plane1, const Plane & plane2) {
 bool operator!=(const Plane & plane1, const Plane & plane2)
 {
     return !(plane1 == plane2);
+}
+
+Plane::Plane(const Vector &normal, float d) noexcept : m_d(d), m_normal(normalize(normal)){}
+
+bool Plane::intersects(const Intersectable &intersectable) const noexcept {
+    return intersectable.intersects(*this);
+}
+
+bool Plane::intersects(const Sphere &sp) const noexcept {
+    return sp.intersects(*this);
+}
+
+bool Plane::intersects(const AABB &aabb) const noexcept {
+    return aabb.intersects(*this);
+}
+
+bool Plane::intersects(const Plane &plane) const noexcept
+{
+    return (plane.m_normal == m_normal || plane.m_normal == -m_normal);
+}
+
+bool Plane::intersects(const Triangle &tri) const noexcept
+{
+    // Not implemented yet
+    assert(false);
+    return false;
+}
+
+std::tuple<Point, Vector> Plane::getIntersectionLine(const Plane &otherPlane)
+{
+    Vector line_dir = cross(m_normal, otherPlane.m_normal);
+
+    if(norm2(line_dir) < ACCEPTABLE_ERROR*ACCEPTABLE_ERROR)
+    {
+        // Planes are parallel..
+        auto tuple = std::make_tuple(Point::undefined(), Vector::undefined());
+        return tuple;
+    }
+    Point p = cross( m_d*otherPlane.m_normal - otherPlane.m_d*m_normal, line_dir);
+    auto tuple = std::make_tuple(p,line_dir);
+    return tuple;
 }

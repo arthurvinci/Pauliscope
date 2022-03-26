@@ -93,7 +93,11 @@ public:
 
     bool intersects(class AABB const& sp) const noexcept override;
 
-    bool intersects(BoundingVolume const& bv) const noexcept override;
+    bool intersects(Intersectable const& intersectable) const noexcept override;
+
+    bool intersects(const Plane &plane) const noexcept override;
+
+    bool intersects(const Triangle &tri) const noexcept override;
 
     float getVolume() override;
 

@@ -7,14 +7,12 @@
 
 #include <vector>
 #include "../primitives/Point.hpp"
-#include "../Displayable.hpp"
-
-class Sphere;
-class AABB;
+#include "../traits/Displayable.hpp"
+#include "../traits/Intersectable.hpp"
 
 #define NOT_REAL_INSTANCE (4294967295U)
 
-class BoundingVolume : public Displayable {
+class BoundingVolume : public Displayable, public Intersectable {
 
 public:
 
@@ -30,32 +28,6 @@ public:
         }
 
     }
-
-
-
-/**
-     * @brief Computes whether the `BoundingVolume` intersects with another `BoundingVolume`
-     * @param bv other `BoundingVolume` to check intersection with
-     * @return whether there is an intersection with the given `BoundingVolume`
-     *
-     * @more Basic function to implement the visitor pattern to compute intersections
-     */
-    virtual bool intersects(BoundingVolume const &bv) const noexcept = 0;
-
-    /**
-     * @brief Computes whether `BoundingVolume` intersects with a `Sphere`
-     * @param sp other `Sphere` to check the intersection with
-     * @return whether they intersect or not
-    */
-    virtual bool intersects(Sphere const &sp) const noexcept = 0;
-
-
-    /**
-     * @brief Computes whether `BoundingVolume` intersects with an `AABB`
-     * @param aabb other `AABB` to check the intersection with
-     * @return whether they intersect or not
-    */
-    virtual bool intersects(AABB const &aabb) const noexcept = 0;
 
     /**
      * @brief Returns the volume of the `BoundingVolume`

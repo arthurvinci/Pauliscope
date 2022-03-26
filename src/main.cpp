@@ -8,6 +8,8 @@
 #include "geometrycentral/surface/meshio.h"
 #include "geometry/bounding-volumes/Sphere.hpp"
 #include "geometry/Object.hpp"
+#include "geometry/primitives/Triangle.hpp"
+#include "geometry/primitives/Plane.hpp"
 
 using namespace geometrycentral;
 using namespace geometrycentral::surface;
@@ -26,15 +28,15 @@ int main(int argc, char **argv) {
 
 
     // Load mesh
-    std::tie(mesh, geometry) = readManifoldSurfaceMesh(argv[1]);
+    //std::tie(mesh, geometry) = readManifoldSurfaceMesh(argv[1]);
 
 
     // Register the mesh with polyscope
-    polyscope::registerSurfaceMesh("Input obj",geometry->inputVertexPositions,mesh->getFaceVertexList(),
-                                              polyscopePermutations(*mesh));
+    //polyscope::registerSurfaceMesh("Input obj",geometry->inputVertexPositions,mesh->getFaceVertexList(),
+    //                                         polyscopePermutations(*mesh));
 
-    Object input_obj{geometry->inputVertexPositions, SPHERE_ID};
-    input_obj.getBoundingVolume()->registerMesh();
+    //Object input_obj{geometry->inputVertexPositions, SPHERE_ID};
+    //input_obj.getBoundingVolume()->registerMesh();
 
 
     //Object aabb1_obj{new AABB(4, 5, 7, 5, 3, 11) };
@@ -76,7 +78,22 @@ int main(int argc, char **argv) {
     polyscope::registerPointCloud("test", pts);
     */
 
-    polyscope::show();
+    std::random_device rd;
+    std::default_random_engine eng(rd());
+    std::uniform_real_distribution<float> distr(-3, 3);
+
+    Sphere sp1(Point{distr(eng), distr(eng), distr(eng)}, abs(distr(eng)));
+    //Sphere sp2(Point{distr(eng), distr(eng), distr(eng)}, abs(distr(eng)));
+    Point p1{distr(eng), distr(eng), distr(eng)};
+    Point p2{distr(eng), distr(eng), distr(eng)};
+    Point p3{distr(eng), distr(eng), distr(eng)};
+
+    Triangle tri(&p1,&p2,&p3, "SEUM");
+    sp1.registerMesh();
+    tri.registerMesh();
+    std::cout << sp1.intersects(tri) << std::endl;
+
+   polyscope::show();
 
     return EXIT_SUCCESS;
 }

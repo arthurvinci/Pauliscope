@@ -8,7 +8,7 @@
 #include "../primitives/Point.hpp"
 #include "Eigen/Core"
 #include "BoundingVolume.hpp"
-#include "../Displayable.hpp"
+#include "../traits/Displayable.hpp"
 
 
 /**
@@ -65,11 +65,15 @@ public:
 
     std::array<float,3> getRadius() const noexcept;
 
-    bool intersects(BoundingVolume const& bv) const noexcept override;
+    bool intersects(Intersectable const& intersectable) const noexcept override;
 
     bool intersects(AABB const& aabb) const noexcept override;
 
     bool intersects(Sphere const& sp) const noexcept override;
+
+    bool intersects(const Plane &plane) const noexcept override;
+
+    bool intersects(const Triangle &tri) const noexcept override;
 
     /**
      * @brief Updates an `AABB` from a rotation m and a translation t
@@ -77,6 +81,10 @@ public:
      * @param t translation vector
      */
     void update(Eigen::Matrix3f const& r, Vector const& t);
+
+    Point closestPointToPoint(Point const& p) const noexcept;
+
+    float distanceToPoint(Point const& p) const noexcept;
 
 
     float getVolume() override;

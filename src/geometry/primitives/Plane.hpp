@@ -6,9 +6,9 @@
 #define PLANE_HPP
 
 #include "Point.hpp"
-#include "Vector.hpp"
+#include "../traits/Intersectable.hpp"
 
-class Plane{
+class Plane : public Intersectable{
 
 public:
 
@@ -22,6 +22,13 @@ public:
      * @param plane plane to be copied
      */
     Plane(Plane const& plane) = default;
+
+    /**
+     * @brief Creates a new instance of `Plane` from a normal and a number
+     * @param point
+     * @param d
+     */
+    Plane(const Vector &normal, float d) noexcept;
 
     /**
      * @brief Creates a new instance of Plane from a point and a vector
@@ -54,6 +61,20 @@ public:
      */
     friend std::ostream& operator<< (std::ostream & stream, Plane const & plane) noexcept;
 
+    /**
+     * @brief Returns the closest `Point` in the plane to the given `Point`
+     * @param p `Point` to make the omputation for
+     * @return closest `Point` in plane to p
+     */
+    Point closestPointToPoint(Point const& p) const noexcept;
+
+    /**
+     * @brief Returns the distance between a `Point` and the `Plane`
+     * @param p `Point` for which to compute the distance
+     * @return the distance from the `Plane` to the `Point`
+     */
+    float distanceTo(Point const& p) const noexcept;
+
     float getD() const noexcept;
 
     void setD(float d);
@@ -62,10 +83,22 @@ public:
 
     void setNormal(const Vector &normal);
 
+    bool intersects(const Intersectable &intersectable) const noexcept override;
+
+    bool intersects(const Sphere &sp) const noexcept override;
+
+    bool intersects(const AABB &aabb) const noexcept override;
+
+    bool intersects(const Plane &plane) const noexcept override;
+
+    bool intersects(const Triangle &tri) const noexcept override;
+
+    std::tuple<Point, Vector> getIntersectionLine(Plane const& otherPlane);
+
 private:
     // Describes a plane in constant-normal form
-    float m_d; // d = m_normal * P for a certain point P
-    Vector m_normal{}; // Plane normal. Points contained in the plane satisfy : m_normal * p = m_d
+    float m_d; // d = m_normal * P for a certain point P in the plane
+    Vector m_normal{}; // Plane unitary normal. Points contained in the plane satisfy : m_normal * p = m_d
 
 };
 

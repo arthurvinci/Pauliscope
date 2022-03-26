@@ -5,6 +5,7 @@
 #include "AABB.hpp"
 #include "Sphere.hpp"
 #include "polyscope/surface_mesh.h"
+#include "../primitives/Triangle.hpp"
 
 const Point &AABB::getCenter() const noexcept
 {
@@ -48,9 +49,9 @@ AABB::AABB(const std::vector<Point> &pts) noexcept : BoundingVolume()
     }
 }
 
-bool AABB::intersects(const BoundingVolume &bv) const noexcept
+bool AABB::intersects(const Intersectable &intersectable) const noexcept
 {
-    return bv.intersects(*this);
+    return intersectable.intersects(*this);
 }
 
 bool AABB::intersects(const AABB &aabb) const noexcept
@@ -119,6 +120,15 @@ void AABB::extremePointsAlongDirection(Vector direction, std::vector<Point> cons
 
 }
 
+bool AABB::intersects(const Plane &plane) const noexcept {
+    assert(false);
+    return false;
+}
+
+bool AABB::intersects(const Triangle &tri) const noexcept {
+    return tri.intersects(*this);
+}
+
 float AABB::getVolume() {
     assert(isDefined(m_center));
     return (float) (8*m_radius[0]*m_radius[1]*m_radius[2]);
@@ -169,6 +179,46 @@ void AABB::constructMesh()
         m_meshFaces.push_back(f4);
         m_meshFaces.push_back(f5);
         m_meshFaces.push_back(f6);
+
+}
+
+Point AABB::closestPointToPoint(const Point &p) const noexcept
+{
+    assert(p.isDefined());
+
+    Point q{};
+    // For each coordinate, if the coordinate is inside the box do nothing. Otherwise, push the point to the box.
+    for(int i =0; i<3; i++)
+    {
+        float coord = p[i];
+        float min_coord = m_center[i] - m_radius[i];
+        float max_coord = m_center[i] + m_radius[i];
+        if( coord < min_coord ) coord = min_coord;
+        if( coord > max_coord ) coord = max_coord;
+
+        q[i] = coord;
+    }
+
+    return q;
+}
+
+float AABB::distanceToPoint(const Point &p) const noexcept
+{
+    assert(p.isDefined());
+
+    float dist2 = 0;
+    // For each axis compute excess distance from the box
+
+    for(int i = 0; i<3; i++)
+    {
+        float coord = p[i];
+        float min_coord = m_center[i] - m_radius[i];
+        float max_coord = m_center[i] + m_radius[i];
+        if( coord < min_coord ) dist2 += (min_coord-coord)*(min_coord-coord);
+        if( coord > max_coord) dist2  += (max_coord-coord)*(max_coord-coord);
+    }
+
+    return sqrtf(dist2);
 
 }
 
