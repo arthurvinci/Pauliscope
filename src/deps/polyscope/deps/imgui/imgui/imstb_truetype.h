@@ -153,7 +153,7 @@
 //         bottom of uppercase characters. Characters extend both above
 //         and below the baseline.
 //
-//      Current Point
+//      Current Point2
 //         As you draw text to the screen, you keep track of a "current point"
 //         which is the origin of each character. The current point's vertical
 //         position is the baseline. Even "baked fonts" use this model.

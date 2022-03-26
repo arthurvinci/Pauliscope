@@ -912,7 +912,7 @@ static void ShowDemoWindowWidgets()
             for (int n = 0; n < 5; n++)
             {
                 char buf[32];
-                sprintf(buf, "Object %d", n);
+                sprintf(buf, "test %d", n);
                 if (ImGui::Selectable(buf, selected == n))
                     selected = n;
             }
@@ -925,7 +925,7 @@ static void ShowDemoWindowWidgets()
             for (int n = 0; n < 5; n++)
             {
                 char buf[32];
-                sprintf(buf, "Object %d", n);
+                sprintf(buf, "test %d", n);
                 if (ImGui::Selectable(buf, selection[n]))
                 {
                     if (!ImGui::GetIO().KeyCtrl)    // Clear selection when CTRL is not held
@@ -4207,7 +4207,7 @@ static void ShowExampleAppPropertyEditor(bool* p_open)
         {
             ImGui::PushID(uid);                      // Use object uid as identifier. Most commonly you could also use the object pointer as a base ID.
             ImGui::AlignTextToFramePadding();  // Text and Tree nodes are less high than regular widgets, here we add vertical spacing to make the tree lines equal high.
-            bool node_open = ImGui::TreeNode("Object", "%s_%u", prefix, uid);
+            bool node_open = ImGui::TreeNode("test", "%s_%u", prefix, uid);
             ImGui::NextColumn();
             ImGui::AlignTextToFramePadding();
             ImGui::Text("my sailor is rich");
@@ -4245,7 +4245,7 @@ static void ShowExampleAppPropertyEditor(bool* p_open)
 
     // Iterate dummy objects with dummy members (all the same data)
     for (int obj_i = 0; obj_i < 3; obj_i++)
-        funcs::ShowDummyObject("Object", obj_i);
+        funcs::ShowDummyObject("test", obj_i);
 
     ImGui::Columns(1);
     ImGui::Separator();

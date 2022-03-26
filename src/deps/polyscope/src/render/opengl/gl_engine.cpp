@@ -1573,7 +1573,7 @@ void GLShaderProgram::setPrimitiveRestartIndex(unsigned int restartIndex_) {
 void GLShaderProgram::activateTextures() {
   for (GLShaderTexture& t : textures) {
     if (t.location == -1) continue;
-    // Point the uniform at this texture
+    // Point2 the uniform at this texture
 
     // Bind to the texture buffer
     GLenum targetType;

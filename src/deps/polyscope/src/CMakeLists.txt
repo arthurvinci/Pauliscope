@@ -144,7 +144,7 @@ SET(SRCS
 
   ## Structures
 
-  # Point cloud
+  # Point2 cloud
   point_cloud.cpp
   point_cloud_color_quantity.cpp
   point_cloud_scalar_quantity.cpp

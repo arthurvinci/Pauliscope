@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(CGDI)
+project(Pauliscope)
 
 
 # Print the build type
@@ -55,12 +55,25 @@ else()
 endif()
 
 
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+
+include_directories(${EIGEN_INCLUDE_DIR})
+
 # == Deps
-add_subdirectory(deps/geometry-central)
 add_subdirectory(deps/polyscope)
+add_subdirectory(deps/geometry-central)
 
 # == Build our project stuff
 
-add_executable(Pauliscope main.cpp)
-target_link_libraries( Pauliscope polyscope geometry-central)
+add_executable(
+        Pauliscope
+        main.cpp
+        geometry/primitives/Plane.cpp
+        geometry/bounding-volumes/BoundingVolume.hpp
+        geometry/bounding-volumes/AABB.cpp
+        geometry/bounding-volumes/Sphere.cpp
+        geometry/primitives/Point.cpp
+        geometry/Object.cpp
+        geometry/defs.hpp )
+target_link_libraries("${PROJECT_NAME}" Eigen3::Eigen polyscope geometry-central )
 
