@@ -11,7 +11,7 @@
 #include "../traits/Intersectable.hpp"
 #include "../traits/Displayable.hpp"
 
-class Triangle : public Intersectable, public Displayable
+class Triangle : public Intersectable
 {
 public:
     /**
@@ -24,7 +24,7 @@ public:
      */
     Triangle(Triangle const& Triangle) = delete;
 
-    Triangle(Point * p1, Point * p2, Point * p3, std::string name);
+    Triangle(Point * p1, Point * p2, Point * p3, const std::string& name);
 
     Point closestPointToPoint(Point const& p) const noexcept;
 
@@ -52,13 +52,10 @@ public:
 
     bool intersects(const Intersectable &intersectable) const noexcept override;
 
+
+
 protected:
-    void constructMesh() override;
-
-protected:
-
-
-
+    void constructMesh();
 
 
 private:

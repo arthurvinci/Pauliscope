@@ -8,6 +8,7 @@
 
 #include "../primitives/Point.hpp"
 #include "BoundingVolume.hpp"
+#include "polyscope/point_cloud.h"
 #include <vector>
 
 /**
@@ -66,7 +67,7 @@ public:
      * @param p3 third point
      * @param p4 fourth point
      *
-     * @more uses the computations given in https://mathworld.wolfram.com/Circumsphere.html
+     * @details uses the computations given in https://mathworld.wolfram.com/Circumsphere.html
      */
     Sphere(Point const& p1, Point const& p2, Point const& p3, Point const& p4, bool realInstance=true);
 
@@ -74,7 +75,7 @@ public:
      * Creates a `Sphere` that encompasses a given set of points.
      * @param points set of points to create the sphere for
      *
-     * @more the returned `Sphere` will be minimal
+     * @details the returned `Sphere` will be minimal
      */
     explicit Sphere(std::vector<Point> const& points, bool realInstance=true);
 
@@ -101,12 +102,29 @@ public:
 
     float getVolume() override;
 
+    void constructMesh() override;
+
+    void constructMesh(bool isSpherical);
+
+    void setVisible(bool isVisible) noexcept override;
+
+    void updateMesh() override;
+
+    void setColor(int r, int g, int b) const noexcept override;
+
+    void update(const Eigen::Matrix3f &r, const Vector &t) override;
+
+    void update(const Vector &t) override;
+
+    void constructPolyMesh();
 
 private:
     Point m_center;
     float m_radius;
+    polyscope::PointCloud* m_SphereMesh;
+    polyscope::SurfaceMesh* m_PolyMesh;
+    bool m_isMeshSphere;
 
-    void constructMesh() override;
 
     /**
      * @brief Computes the minimal `Sphere` encompassing a set of `Point`s
@@ -116,9 +134,9 @@ private:
      * @param nbFound number of points found to construct the Sphere (A Sphere needs at most 4 points to be defined)
      * @return The minimal `Sphere` encompassing all the points
      *
-     * @more This is an implementation of Welzl algorithm and more precisely the move-to-front heuristic.
-     *       The algorithm is inspired by Bernd Gärtner paper https://people.inf.ethz.ch/gaertner/subdir/texts/own_work/esa99_final.pdf
-     *       and Nicolas Capens' blog post https://www.flipcode.com/archives/Smallest_Enclosing_Spheres.shtml
+     * @details This is an implementation of Welzl algorithm and more precisely the move-to-front heuristic.
+     *          The algorithm is inspired by Bernd Gärtner paper https://people.inf.ethz.ch/gaertner/subdir/texts/own_work/esa99_final.pdf
+     *          and Nicolas Capens' blog post https://www.flipcode.com/archives/Smallest_Enclosing_Spheres.shtml
      */
     static Sphere minimalSphere(std::vector<Point> &pts, unsigned int nbPts, unsigned int start, unsigned int nbFound);
 

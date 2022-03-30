@@ -74,6 +74,6 @@ add_executable(
         geometry/bounding-volumes/Sphere.cpp
         geometry/primitives/Point.cpp
         geometry/Object.cpp
-        geometry/defs.hpp geometry/traits/Intersectable.hpp geometry/primitives/Triangle.cpp geometry/primitives/Triangle.hpp)
+        geometry/defs.hpp geometry/traits/Intersectable.hpp geometry/primitives/Triangle.cpp geometry/primitives/Triangle.hpp geometry/traits/Instantiable.hpp)
 target_link_libraries("${PROJECT_NAME}" Eigen3::Eigen polyscope geometry-central )
 

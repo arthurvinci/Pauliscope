@@ -6,9 +6,10 @@
 #define AABB_HPP
 
 #include "../primitives/Point.hpp"
-#include "Eigen/Core"
+#include "polyscope/surface_mesh.h"
 #include "BoundingVolume.hpp"
 #include "../traits/Displayable.hpp"
+#include "polyscope/surface_mesh.h"
 
 
 /**
@@ -75,28 +76,35 @@ public:
 
     bool intersects(const Triangle &tri) const noexcept override;
 
-    /**
-     * @brief Updates an `AABB` from a rotation m and a translation t
-     * @param r rotation matrix of the transformation
-     * @param t translation vector
-     */
-    void update(Eigen::Matrix3f const& r, Vector const& t);
+    void update(Eigen::Matrix3f const& r, Vector const& t) override;
+
+    void update(const Vector &t) override;
 
     Point closestPointToPoint(Point const& p) const noexcept;
 
     float distanceToPoint(Point const& p) const noexcept;
 
-
     float getVolume() override;
+
+    void constructMesh() override;
+
+    void updateMesh() noexcept override;
+
+    void setColor(int r, int g, int b) const noexcept override;
+
+    void setVisible(bool isVisible) noexcept override;
+
+    polyscope::SurfaceMesh* getMesh();
 
 
 private:
     Point m_center; // Center point of the box
     std::array<float,3> m_radius; // radius in each direction (x,y,z)
+    polyscope::SurfaceMesh* m_mesh; // mesh of the AABB
 
     static void extremePointsAlongDirection(Vector direction, std::vector<Point> const& pts, unsigned int *indexMin, unsigned int *indexMax);
 
-    void constructMesh() override;
+    void constructMesh(bool update);
 };
 
 

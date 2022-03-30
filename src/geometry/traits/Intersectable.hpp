@@ -20,7 +20,7 @@ public:
      * @param intersectable other `Intersectable` to check intersection with
      * @return whether there is an intersection with the given `Intersectable`
      *
-     * @more Basic function to implement the visitor pattern to compute intersections
+     * @details Basic function to implement the visitor pattern to compute intersections
      */
     virtual bool intersects(Intersectable const &intersectable) const noexcept = 0;
 

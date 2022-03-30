@@ -16,7 +16,7 @@
 #include "geometrycentral/surface/geometry.h"
 
 
-class Object{
+class Object: public Displayable{
 
 public:
     /**
@@ -30,37 +30,44 @@ public:
      */
     Object(Object const& obj) = default;
 
+    explicit Object(const std::string& path, std::string name=genName("object"));
+
+    Object(std::string path, bvID boundingVolume,std::string name= genName("object"));
+
+
     /**
      * @brief Creates an `Object` from a given set of vertex data
      * @param vertexData set of vertex data
      */
-    explicit Object(geometrycentral::surface::VertexData<geometrycentral::Vector3> const& vertexData) noexcept;
+    explicit Object(geometrycentral::surface::VertexData<geometrycentral::Vector3> const& vertexData, std::vector<std::vector<size_t>> const& faceData, std::string name) noexcept;
 
     /**
      * @brief Creates an `Object` from a given set of vertex data and a `BoundingVolume` hint
      * @param vertexData set of vertex data
      * @param bvId `bvID` of the `BoundingVolume` to construct for the object
      */
-    Object(geometrycentral::surface::VertexData<geometrycentral::Vector3> const& vertexData, bvID bvId) noexcept;
+    Object(geometrycentral::surface::VertexData<geometrycentral::Vector3> const& vertexData, std::vector<std::vector<size_t>> const& faceData, std::string name, bvID bvId) noexcept;
 
     /**
      * @brief Creates an `Object` from a given set of vertices
      * @param vertices set of vertices
      */
-    explicit Object(std::vector<std::array<float,3>> const& vertices) noexcept;
+    explicit Object(std::vector<std::array<float,3>> const& vertices, std::vector<std::vector<size_t>> const& faceData, std::string name) noexcept;
 
     /**
      * @brief Creates an `Object` from a given set of vertices and a `BoundingVolume`
      * @param vertices set of vertices
      * @param bv `BoundingVolume`
      */
-    Object(std::vector<std::array<float,3>> const& vertices, bvID bvId)noexcept;
+    Object(std::vector<std::array<float,3>> const& vertices, std::vector<std::vector<size_t>> const& faceData, std::string name, bvID bvId)noexcept;
 
     /**
      * @brief Creates an `Object` from a BoundingVolume
      * @param bv
      */
     explicit Object(BoundingVolume *bv) noexcept;
+
+    explicit Object(polyscope::SurfaceMesh* surfaceMesh) noexcept;
 
     BoundingVolume *getBoundingVolume() const noexcept;
 
@@ -72,12 +79,24 @@ public:
      *
      * @todo Take possibility of rotation into account
      */
-    static BoundingVolume *bestFittingBV(std::vector<Point> const& points) noexcept;
+    static BoundingVolume *bestFittingBV(std::vector<glm::vec3>const& points) noexcept;
 
+    void update(Eigen::Matrix3f const& r, Vector const& t);
+
+    void update(Vector const& t);
+
+    void constructMesh() override;
+
+    void setColor(int r, int g, int b) const noexcept override;
+
+    void setVisible(bool isVisible) noexcept override;
+
+    void updateMesh() override;
 
 private:
-    std::vector<Point> m_vertices;
     BoundingVolume*    m_boundingVolume;
+    polyscope::SurfaceMesh* m_mesh;
+
 };
 
 

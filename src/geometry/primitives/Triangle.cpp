@@ -11,7 +11,8 @@
 #include <utility>
 
 
-Triangle::Triangle(Point *p1,Point *p2,Point *p3, std::string name) : Displayable(std::move(name), true) {
+Triangle::Triangle(Point *p1,Point *p2,Point *p3, const std::string& name)
+{
     m_pts[0] = p1;
     m_pts[1] = p2;
     m_pts[2] = p3;
@@ -271,9 +272,7 @@ bool Triangle::intersects(const AABB &aabb) const noexcept
     Point normal = cross(ab, bc);
     float d = dot(normal, a);
     Plane p(normal,d);
-    aabb.intersects(p);
-
-    return false;
+    return aabb.intersects(p);
 }
 
 bool Triangle::intersects(const Plane &plane) const noexcept
@@ -348,7 +347,7 @@ Point Triangle::closestPointToPoint(const Point &p) const noexcept {
 
 void Triangle::constructMesh()
 {
-
+    /*
     for(int i=0; i<3; i++)
     {
         Point p = *m_pts[i];
@@ -357,6 +356,7 @@ void Triangle::constructMesh()
     m_meshFaces.push_back({0,1,2});
 
     m_needsMeshUpdate = false;
+     */
 }
 
 bool Triangle::intersects(const Intersectable &intersectable) const noexcept {

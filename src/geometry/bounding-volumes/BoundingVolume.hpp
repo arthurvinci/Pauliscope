@@ -6,28 +6,18 @@
 #define BOUNDINGVOLUME_HPP
 
 #include <vector>
+#include "Eigen/Core"
 #include "../primitives/Point.hpp"
 #include "../traits/Displayable.hpp"
 #include "../traits/Intersectable.hpp"
-
-#define NOT_REAL_INSTANCE (4294967295U)
 
 class BoundingVolume : public Displayable, public Intersectable {
 
 public:
 
-    explicit BoundingVolume(bool realInstance = true) : Displayable(genName(bv_instances), true) {
-        if (realInstance) {
-            m_id = bv_instances;
-            bv_instances++;
-            //std::cout << "New Sphere instance "<<m_id<<std::endl;
+    explicit BoundingVolume(bool realInstance = true) : Displayable(false, realInstance, false)
+    {}
 
-        } else
-        {
-            m_id = NOT_REAL_INSTANCE;
-        }
-
-    }
 
     /**
      * @brief Returns the volume of the `BoundingVolume`
@@ -35,18 +25,18 @@ public:
      */
     virtual float getVolume() = 0;
 
-    static unsigned int bv_instances;
+    /**
+    * @brief Updates a `BoundingVolume` from a rotation r and a translation t and updates its mesh
+    * @param r rotation matrix of the transformation
+    * @param t translation vector
+ */
+    virtual void update(Eigen::Matrix3f const& r, Vector const& t) = 0;
 
-protected:
-    unsigned int m_id;
-
-private:
-    static std::string genName(unsigned int id) {
-        std::ostringstream os;
-        os << "BoundingVolume" << id;
-        std::string n = os.str();
-        return n;
-    };
+    /**
+    * @brief Updates a `BoundingVolume` from a translation t and updates its mesh
+    * @param t translation vector
+    */
+    virtual void update(Vector const& t) = 0;
 
 };
 

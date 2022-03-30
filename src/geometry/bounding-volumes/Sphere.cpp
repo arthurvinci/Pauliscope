@@ -6,8 +6,10 @@
 #include <Eigen/Dense>
 #include "Sphere.hpp"
 #include "../defs.hpp"
+#include "AABB.hpp"
 #include "../primitives/Plane.hpp"
 #include "../primitives/Triangle.hpp"
+#include "polyscope/point_cloud.h"
 
 
 Sphere::Sphere(const Point &p, float radius, bool realInstance) : BoundingVolume(realInstance), m_center(p), m_radius(radius)
@@ -196,6 +198,8 @@ bool Sphere::isInside(const Point &p)
 
 Sphere Sphere::minimalSphere(std::vector<Point> &pts, unsigned int nbPts, unsigned int start, unsigned int nbFound)
 {
+    assert(nbFound<5);
+
     Sphere minSphere;
 
     switch(nbFound)
@@ -240,7 +244,7 @@ Sphere Sphere::minimalSphere(std::vector<Point> &pts, unsigned int nbPts, unsign
 }
 
 bool Sphere::intersects(const AABB &aabb) const noexcept {
-    return false;
+    return aabb.intersects(*this);
 }
 
 bool Sphere::intersects(const Intersectable &intersectable) const noexcept {
@@ -255,14 +259,13 @@ float Sphere::getVolume()
 }
 
 
-void Sphere::constructMesh()
+void Sphere::constructPolyMesh()
 {
-    // This function should only be called once
-    assert(m_meshFaces.empty());
-    assert(m_meshFaces.empty());
-
     // Geometry of the dodecahedron based on Paul Bourke's code:
     // http://paulbourke.net/geometry/platonic/sphere.cpp
+
+    std::vector<std::array<float,3>> vertices{};
+    std::vector<std::vector<size_t>> faces{};
 
     const float sqrt5 = sqrtf (5.0f);
     const float phi = (1.0f + sqrt5) * 0.5f;
@@ -287,60 +290,67 @@ void Sphere::constructMesh()
     const Point v12 = m_center + Point {-b, -a,  0};
 
 
-    m_meshVertices.push_back(v1.data());
-    m_meshVertices.push_back(v2.data());
-    m_meshVertices.push_back(v3.data());
-    m_meshVertices.push_back(v4.data());
-    m_meshVertices.push_back(v5.data());
-    m_meshVertices.push_back(v6.data());
-    m_meshVertices.push_back(v7.data());
-    m_meshVertices.push_back(v8.data());
-    m_meshVertices.push_back(v9.data());
-    m_meshVertices.push_back(v10.data());
-    m_meshVertices.push_back(v11.data());
-    m_meshVertices.push_back(v12.data());
+    vertices.push_back(v1.data());
+    vertices.push_back(v2.data());
+    vertices.push_back(v3.data());
+    vertices.push_back(v4.data());
+    vertices.push_back(v5.data());
+    vertices.push_back(v6.data());
+    vertices.push_back(v7.data());
+    vertices.push_back(v8.data());
+    vertices.push_back(v9.data());
+    vertices.push_back(v10.data());
+    vertices.push_back(v11.data());
+    vertices.push_back(v12.data());
 
-    std::vector<unsigned int> f1 = {0,1,2};
-    std::vector<unsigned int> f2 = {3,2,1};
-    std::vector<unsigned int> f3 = {3,4,5};
-    std::vector<unsigned int> f4 = {3,8,4};
-    std::vector<unsigned int> f5 = {0,6,7};
-    std::vector<unsigned int> f6 = {0,9,6};
-    std::vector<unsigned int> f7 = {4,10,11};
-    std::vector<unsigned int> f8 = {6,11,10};
-    std::vector<unsigned int> f9 = {2,5,9};
-    std::vector<unsigned int> f10 = {11,9,5};
-    std::vector<unsigned int> f11 = {1,7,8};
-    std::vector<unsigned int> f12 = {10,8,7};
-    std::vector<unsigned int> f13 = {3,5,2};
-    std::vector<unsigned int> f14 = {3,1,8};
-    std::vector<unsigned int> f15 = {0,2,9};
-    std::vector<unsigned int> f16 = {0,7,1};
-    std::vector<unsigned int> f17 = {6,9,11};
-    std::vector<unsigned int> f18 = {6,10,7};
-    std::vector<unsigned int> f19 = {4,11,5};
-    std::vector<unsigned int> f20 = {4,8,10};
+    std::vector<size_t> f1 = {0,1,2};
+    std::vector<size_t> f2 = {3,2,1};
+    std::vector<size_t> f3 = {3,4,5};
+    std::vector<size_t> f4 = {3,8,4};
+    std::vector<size_t> f5 = {0,6,7};
+    std::vector<size_t> f6 = {0,9,6};
+    std::vector<size_t> f7 = {4,10,11};
+    std::vector<size_t> f8 = {6,11,10};
+    std::vector<size_t> f9 = {2,5,9};
+    std::vector<size_t> f10 = {11,9,5};
+    std::vector<size_t> f11 = {1,7,8};
+    std::vector<size_t> f12 = {10,8,7};
+    std::vector<size_t> f13 = {3,5,2};
+    std::vector<size_t> f14 = {3,1,8};
+    std::vector<size_t> f15 = {0,2,9};
+    std::vector<size_t> f16 = {0,7,1};
+    std::vector<size_t> f17 = {6,9,11};
+    std::vector<size_t> f18 = {6,10,7};
+    std::vector<size_t> f19 = {4,11,5};
+    std::vector<size_t> f20 = {4,8,10};
 
-    m_meshFaces.push_back(f1);
-    m_meshFaces.push_back(f2);
-    m_meshFaces.push_back(f3);
-    m_meshFaces.push_back(f4);
-    m_meshFaces.push_back(f5);
-    m_meshFaces.push_back(f6);
-    m_meshFaces.push_back(f7);
-    m_meshFaces.push_back(f8);
-    m_meshFaces.push_back(f9);
-    m_meshFaces.push_back(f10);
-    m_meshFaces.push_back(f11);
-    m_meshFaces.push_back(f12);
-    m_meshFaces.push_back(f13);
-    m_meshFaces.push_back(f14);
-    m_meshFaces.push_back(f15);
-    m_meshFaces.push_back(f16);
-    m_meshFaces.push_back(f17);
-    m_meshFaces.push_back(f18);
-    m_meshFaces.push_back(f19);
-    m_meshFaces.push_back(f20);
+    faces.push_back(f1);
+    faces.push_back(f2);
+    faces.push_back(f3);
+    faces.push_back(f4);
+    faces.push_back(f5);
+    faces.push_back(f6);
+    faces.push_back(f7);
+    faces.push_back(f8);
+    faces.push_back(f9);
+    faces.push_back(f10);
+    faces.push_back(f11);
+    faces.push_back(f12);
+    faces.push_back(f13);
+    faces.push_back(f14);
+    faces.push_back(f15);
+    faces.push_back(f16);
+    faces.push_back(f17);
+    faces.push_back(f18);
+    faces.push_back(f19);
+    faces.push_back(f20);
+
+
+    std::string name;
+    name = genName("sphere",m_id);
+    m_PolyMesh = polyscope::registerSurfaceMesh(name, vertices, faces);
+    m_isMeshSphere = false;
+    m_isMeshConstructed = true;
 }
 
 
@@ -352,4 +362,120 @@ bool Sphere::intersects(const Plane &plane) const noexcept {
 
 bool Sphere::intersects(const Triangle &tri) const noexcept {
     return tri.intersects(*this);
+}
+
+
+void Sphere::setColor(int r, int g, int b) const noexcept
+{
+    if(m_isMeshConstructed)
+    {
+        if(m_isMeshSphere)
+        {
+            m_SphereMesh->setPointColor({r,g,b});
+        }
+        else
+        {
+            m_PolyMesh->setSurfaceColor({r,g,b});
+        }
+    }
+}
+
+void Sphere::setVisible(bool isVisible) noexcept
+{
+    m_isVisible = isVisible;
+
+    if(isVisible)
+    {
+        if(!m_isMeshConstructed)
+        {
+            constructMesh();
+        }
+
+        if(m_isMeshSphere)
+            m_SphereMesh->setTransparency(1);
+        else
+            m_PolyMesh->setTransparency(1);
+    }
+    else if(m_isMeshConstructed)
+    {
+        if(m_isMeshSphere)
+            m_SphereMesh->setTransparency(0);
+        else
+            m_PolyMesh->setTransparency(0);
+    }
+}
+
+void Sphere::updateMesh() {
+
+    if(!m_isMeshConstructed)
+        constructMesh();
+
+    if(m_isMeshSphere)
+    {
+        m_SphereMesh->refresh();
+    }
+    else
+        m_PolyMesh->refresh();
+
+}
+
+void Sphere::constructMesh()
+{
+
+    std::vector<std::array<float,3>> center;
+    center.push_back({m_center.data()});
+    std::string name;
+    name = genName("sphere",m_id);
+    m_SphereMesh = polyscope::registerPointCloud(name, center);
+    m_SphereMesh->setPointRadius(m_radius);
+
+    m_isMeshSphere = true;
+    m_isMeshConstructed = true;
+
+}
+
+void Sphere::constructMesh(bool isSpherical)
+{
+    if(isSpherical)
+        constructMesh();
+    else
+        constructPolyMesh();
+}
+
+void Sphere::update(const Eigen::Matrix3f &r, const Vector &t)
+{
+    update(t);
+}
+
+void Sphere::update(const Vector &t)
+{
+    m_center += t;
+
+    if(m_isMeshConstructed)
+    {
+        if(m_isMeshSphere)
+        {
+
+            for(int i =0; i<3; i++)
+                m_SphereMesh->points[0][i] = m_center[i];
+
+            m_SphereMesh->refresh();
+        }
+        else
+        {
+            for(unsigned int i=0; i<m_PolyMesh->nVertices(); i++)
+            {
+                m_PolyMesh->vertices[i].x +=t.x;
+                m_PolyMesh->vertices[i].y +=t.y;
+                m_PolyMesh->vertices[i].z +=t.z;
+            }
+
+            m_PolyMesh->refresh();
+        }
+    }
+    else
+    {
+        updateMesh();
+    }
+
 }

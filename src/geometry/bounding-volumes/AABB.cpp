@@ -4,7 +4,6 @@
 
 #include "AABB.hpp"
 #include "Sphere.hpp"
-#include "polyscope/surface_mesh.h"
 #include "../primitives/Triangle.hpp"
 
 const Point &AABB::getCenter() const noexcept
@@ -70,7 +69,9 @@ bool AABB::intersects(const AABB &aabb) const noexcept
 }
 
 bool AABB::intersects(const Sphere &sp) const noexcept {
-    return false;
+    Point pt = closestPointToPoint(sp.getCenter());
+    Vector toCenter = sp.getCenter() - pt;
+    return norm2(toCenter) <= sp.getRadius()*sp.getRadius();
 }
 
 void AABB::update(Eigen::Matrix3f const& r, Vector const& t)
@@ -89,8 +90,7 @@ void AABB::update(Eigen::Matrix3f const& r, Vector const& t)
             m_radius[i] += std::abs( r(i,j) )*radius[j];
         }
     }
-
-    m_needsMeshUpdate = true;
+    constructMesh(true); // Reconstruct the mesh
 }
 
  std::array<float, 3> AABB::getRadius() const noexcept {
@@ -134,53 +134,6 @@ float AABB::getVolume() {
     return (float) (8*m_radius[0]*m_radius[1]*m_radius[2]);
 }
 
-void AABB::constructMesh()
-{
-    m_meshVertices.clear();
-    m_meshFaces.clear();
-        /*
-     * Order of the vertices of the cube:
-     *         7+--------+8
-     *         /        /|
-     *        /        / |
-     *      4+--------+3 |
-     *       |        |  |
-     *       |   6    |  +5
-     *       |        | /
-     *       |        |/
-     *     1 +--------+ 2
-     */
-        Point v1 = {m_center[0]-m_radius[0], m_center[1]-m_radius[1], m_center[2] + m_radius[2]};
-        Point v2 = {m_center[0]+m_radius[0], m_center[1]-m_radius[1], m_center[2] + m_radius[2]};
-        Point v3 = {m_center[0]+m_radius[0], m_center[1]+m_radius[1], m_center[2] + m_radius[2]};
-        Point v4 = {m_center[0]-m_radius[0], m_center[1]+m_radius[1], m_center[2] + m_radius[2]};
-        Point v5 = {m_center[0]+m_radius[0], m_center[1]-m_radius[1], m_center[2] - m_radius[2]};
-        Point v6 = {m_center[0]-m_radius[0], m_center[1]-m_radius[1], m_center[2] - m_radius[2]};
-        Point v7 = {m_center[0]-m_radius[0], m_center[1]+m_radius[1], m_center[2] - m_radius[2]};
-        Point v8 = {m_center[0]+m_radius[0], m_center[1]+m_radius[1], m_center[2] - m_radius[2]};
-        m_meshVertices.push_back(v1.data());
-        m_meshVertices.push_back(v2.data());
-        m_meshVertices.push_back(v3.data());
-        m_meshVertices.push_back(v4.data());
-        m_meshVertices.push_back(v5.data());
-        m_meshVertices.push_back(v6.data());
-        m_meshVertices.push_back(v7.data());
-        m_meshVertices.push_back(v8.data());
-
-        std::vector<unsigned int> f1 = {0,1,2,3};
-        std::vector<unsigned int> f2 = {1,4,7,2};
-        std::vector<unsigned int> f3 = {4,5,6,7};
-        std::vector<unsigned int> f4 = {5,0,3,6};
-        std::vector<unsigned int> f5 = {3,2,7,6};
-        std::vector<unsigned int> f6 = {5,4,1,0};
-        m_meshFaces.push_back(f1);
-        m_meshFaces.push_back(f2);
-        m_meshFaces.push_back(f3);
-        m_meshFaces.push_back(f4);
-        m_meshFaces.push_back(f5);
-        m_meshFaces.push_back(f6);
-
-}
 
 Point AABB::closestPointToPoint(const Point &p) const noexcept
 {
@@ -221,6 +174,139 @@ float AABB::distanceToPoint(const Point &p) const noexcept
     return sqrtf(dist2);
 
 }
+
+void AABB::constructMesh()
+
+{
+    if(m_isMeshConstructed)
+        return;
+
+    constructMesh(false);
+}
+
+
+void AABB::setColor(int r, int g, int b) const noexcept
+{
+    if(m_isMeshConstructed)
+        m_mesh->setSurfaceColor({r,g,b});
+}
+
+void AABB::setVisible(bool isVisible) noexcept
+{
+    m_isVisible = isVisible;
+
+    if(isVisible)
+    {
+        if(!m_isMeshConstructed)
+            constructMesh();
+
+        m_mesh->setTransparency(1);
+    }
+    else if(m_isMeshConstructed)
+        m_mesh->setTransparency(0);
+}
+
+void AABB::updateMesh() noexcept
+{
+    if(!m_isMeshConstructed)
+        constructMesh();
+
+    m_mesh->refresh();
+}
+
+void AABB::update(const Vector &t)
+{
+    m_center += t;
+
+    if(m_isMeshConstructed)
+    {
+        for(unsigned int i=0; i<m_mesh->nVertices(); i++)
+        {
+            m_mesh->vertices[i].x +=t.x;
+            m_mesh->vertices[i].y +=t.y;
+            m_mesh->vertices[i].z +=t.z;
+        }
+        m_mesh->refresh();
+    }
+    else
+    {
+        updateMesh();
+    }
+
+
+}
+
+void AABB::constructMesh(bool update)
+{
+    std::vector<std::array<float,3>> vertices{};
+    std::vector<std::vector<size_t>> faces{};
+    /*
+     * Order of the vertices of the cube:
+     *         7+--------+8
+     *         /        /|
+     *        /        / |
+     *      4+--------+3 |
+     *       |        |  |
+     *       |   6    |  +5
+     *       |        | /
+     *       |        |/
+     *     1 +--------+ 2
+     */
+    Point v1 = {m_center[0]-m_radius[0], m_center[1]-m_radius[1], m_center[2] + m_radius[2]};
+    Point v2 = {m_center[0]+m_radius[0], m_center[1]-m_radius[1], m_center[2] + m_radius[2]};
+    Point v3 = {m_center[0]+m_radius[0], m_center[1]+m_radius[1], m_center[2] + m_radius[2]};
+    Point v4 = {m_center[0]-m_radius[0], m_center[1]+m_radius[1], m_center[2] + m_radius[2]};
+    Point v5 = {m_center[0]+m_radius[0], m_center[1]-m_radius[1], m_center[2] - m_radius[2]};
+    Point v6 = {m_center[0]-m_radius[0], m_center[1]-m_radius[1], m_center[2] - m_radius[2]};
+    Point v7 = {m_center[0]-m_radius[0], m_center[1]+m_radius[1], m_center[2] - m_radius[2]};
+    Point v8 = {m_center[0]+m_radius[0], m_center[1]+m_radius[1], m_center[2] - m_radius[2]};
+    vertices.push_back(v1.data());
+    vertices.push_back(v2.data());
+    vertices.push_back(v3.data());
+    vertices.push_back(v4.data());
+    vertices.push_back(v5.data());
+    vertices.push_back(v6.data());
+    vertices.push_back(v7.data());
+    vertices.push_back(v8.data());
+
+    std::vector<size_t> f1 = {0,1,2,3};
+    std::vector<size_t> f2 = {1,4,7,2};
+    std::vector<size_t> f3 = {4,5,6,7};
+    std::vector<size_t> f4 = {5,0,3,6};
+    std::vector<size_t> f5 = {3,2,7,6};
+    std::vector<size_t> f6 = {5,4,1,0};
+    faces.push_back(f1);
+    faces.push_back(f2);
+    faces.push_back(f3);
+    faces.push_back(f4);
+    faces.push_back(f5);
+    faces.push_back(f6);
+
+
+    if(update)
+    {
+        m_mesh->updateVertexPositions(vertices);
+    }
+    else
+    {
+        std::string name;
+        name = genName("aabb",m_id);
+
+        m_mesh =  polyscope::registerSurfaceMesh(name, vertices, faces);
+        m_isMeshConstructed = true;
+        setVisible(false);
+    }
+
+}
+
+polyscope::SurfaceMesh *AABB::getMesh() {
+    if(!m_isMeshConstructed)
+        constructMesh();
+    return m_mesh;
+}
+
+
+
 
 
 
