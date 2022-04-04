@@ -74,6 +74,15 @@ add_executable(
         geometry/bounding-volumes/Sphere.cpp
         geometry/primitives/Point.cpp
         geometry/Object.cpp
-        geometry/defs.hpp geometry/traits/Intersectable.hpp geometry/primitives/Triangle.cpp geometry/primitives/Triangle.hpp geometry/traits/Instantiable.hpp)
+        geometry/defs.hpp geometry/traits/Intersectable.hpp
+        geometry/primitives/Triangle.cpp
+        geometry/primitives/Triangle.hpp
+        geometry/traits/Instantiable.hpp
+        geometry/trees/BVNode.cpp
+        geometry/trees/BVNode.hpp
+        geometry/bounding-volumes/BoundingVolume.cpp
+        geometry/trees/BVOctree.cpp
+        geometry/trees/BVOctree.hpp
+        geometry/primitives/tritri_macros.hpp)
 target_link_libraries("${PROJECT_NAME}" Eigen3::Eigen polyscope geometry-central )
 

@@ -42,6 +42,15 @@ struct Vector {
     Vector& operator/=(const float& s);
     bool operator==(const Vector& v) const;
     bool operator!=(const Vector& v) const;
+
+    bool operator<(const Vector &rhs) const;
+
+    bool operator>(const Vector &rhs) const;
+
+    bool operator<=(const Vector &rhs) const;
+
+    bool operator>=(const Vector &rhs) const;
+
     const Vector operator-() const;
 
     // Other functions
@@ -242,7 +251,7 @@ inline std::array<Vector, 2> Vector::buildTangentBasis() const {
 
 
 inline std::ostream& operator<<(std::ostream& output, const Vector& v) {
-    output << "<" << v.x << ", " << v.y << ", " << v.z << ">";
+    output << "{" << v.x << ", " << v.y << ", " << v.z << "}";
     return output;
 }
 
@@ -262,6 +271,30 @@ inline std::string to_string(Vector vec) {
 inline std::array<float, 3> Vector::data() const {
     std::array<float,3> data{x,y,z};
     return data;
+}
+
+inline bool Vector::operator<(const Vector &rhs) const {
+    if (x < rhs.x)
+        return true;
+    if (rhs.x < x)
+        return false;
+    if (y < rhs.y)
+        return true;
+    if (rhs.y < y)
+        return false;
+    return z < rhs.z;
+}
+
+inline bool Vector::operator>(const Vector &rhs) const {
+    return rhs < *this;
+}
+
+inline bool Vector::operator<=(const Vector &rhs) const {
+    return !(rhs < *this);
+}
+
+inline bool Vector::operator>=(const Vector &rhs) const {
+    return !(*this < rhs);
 }
 
 #endif //VECTOR_HPP

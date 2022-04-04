@@ -5,6 +5,8 @@
 #include "AABB.hpp"
 #include "Sphere.hpp"
 #include "../primitives/Triangle.hpp"
+#include "../defs.hpp"
+#include "../primitives/Plane.hpp"
 
 const Point &AABB::getCenter() const noexcept
 {
@@ -12,7 +14,8 @@ const Point &AABB::getCenter() const noexcept
 }
 
 
-AABB::AABB( const Point &point, float r_x, float r_y,float r_z) noexcept : BoundingVolume(), m_center(point)
+AABB::AABB( const Point &point, float r_x, float r_y,float r_z) noexcept :
+BoundingVolume(), m_center(point), m_radius(), m_mesh()
 {
     m_radius[0] = r_x;
     m_radius[1] = r_y;
@@ -20,15 +23,17 @@ AABB::AABB( const Point &point, float r_x, float r_y,float r_z) noexcept : Bound
 
 }
 
-AABB::AABB(float x, float y, float z, float r_x, float r_y,float r_z) noexcept : BoundingVolume(), m_center(Point{x,y,z}), m_radius({r_x,r_y,r_z})
+AABB::AABB(float x, float y, float z, float r_x, float r_y,float r_z) noexcept :
+BoundingVolume(), m_center(Point{x,y,z}), m_radius({r_x,r_y,r_z}), m_mesh()
 {}
 
-AABB::AABB(const Sphere &sp) noexcept : BoundingVolume(), m_center(sp.getCenter()),
-                                        m_radius({sp.getRadius(), sp.getRadius(), sp.getRadius()})
+AABB::AABB(const Sphere &sp) noexcept :
+BoundingVolume(), m_center(sp.getCenter()),m_radius({sp.getRadius(), sp.getRadius(), sp.getRadius()}), m_mesh()
 {}
 
 
-AABB::AABB(const std::vector<Point> &pts) noexcept : BoundingVolume()
+AABB::AABB(const std::vector<Point> &pts) noexcept :
+BoundingVolume(), m_center(), m_radius(), m_mesh()
 {
     assert(!pts.empty());
     m_center = Point::zero();
@@ -53,22 +58,29 @@ bool AABB::intersects(const Intersectable &intersectable) const noexcept
     return intersectable.intersects(*this);
 }
 
-bool AABB::intersects(const AABB &aabb) const noexcept
+bool AABB::intersectsBV(const AABB &aabb) const noexcept
 {
     float r;
+    float test;
     r = m_radius[0] + aabb.m_radius[0];
-    if(std::abs(m_center[0] - aabb.m_center[0] ) > r  ) return false;
+    test = abs(m_center[0] - aabb.m_center[0] );
+    if( test > r  )
+        return false;
 
     r = m_radius[1] + aabb.m_radius[1];
-    if(std::abs(m_center[1] - aabb.m_center[1] ) > r ) return false;
+    test = abs(m_center[1] - aabb.m_center[1]);
+    if(test > r )
+        return false;
 
     r = m_radius[2] + aabb.m_radius[2];
-    if(std::abs(m_center[2] - aabb.m_center[2] ) > r ) return false;
+    test = abs(m_center[2] - aabb.m_center[2]);
+    if(test > r )
+        return false;
 
     return true;
 }
 
-bool AABB::intersects(const Sphere &sp) const noexcept {
+bool AABB::intersectsBV(const Sphere &sp) const noexcept {
     Point pt = closestPointToPoint(sp.getCenter());
     Vector toCenter = sp.getCenter() - pt;
     return norm2(toCenter) <= sp.getRadius()*sp.getRadius();
@@ -76,6 +88,8 @@ bool AABB::intersects(const Sphere &sp) const noexcept {
 
 void AABB::update(Eigen::Matrix3f const& r, Vector const& t)
 {
+    if(!m_isMeshConstructed) return;
+
     float radius[3];
     std::copy(std::begin(m_radius), std::end(m_radius), std::begin(radius)) ;
     auto center = m_center;
@@ -87,7 +101,7 @@ void AABB::update(Eigen::Matrix3f const& r, Vector const& t)
         for(int j =0; j<3; j++)
         {
             m_center[i] += r(i,j)*center[j];
-            m_radius[i] += std::abs( r(i,j) )*radius[j];
+            m_radius[i] += abs( r(i,j) )*radius[j];
         }
     }
     constructMesh(true); // Reconstruct the mesh
@@ -126,7 +140,128 @@ bool AABB::intersects(const Plane &plane) const noexcept {
 }
 
 bool AABB::intersects(const Triangle &tri) const noexcept {
-    return tri.intersects(*this);
+    Point a = tri.getPoint(0);
+    Point b = tri.getPoint(1);
+    Point c = tri.getPoint(2);
+
+    Point center = m_center;
+    float r_x = m_radius[0];
+    float r_y = m_radius[1];
+    float r_z = m_radius[2];
+
+    // Move AABB's center to the origin:
+    a -= center;
+    b -= center;
+    c -= center;
+
+    Vector ab = b - a;
+    Vector bc = c - b;
+    Vector ca = a - c;
+    Vector n{};
+
+    // Try finding a separating axes -> If we manage then they can't collide
+    float p0,p1,p2,r;
+    Vector u_x = {1, 0, 0};
+    Vector u_y = {0, 1, 0};
+    Vector u_z = {0, 0, 1};
+
+    //
+    // Axis 1 : (1,0,0)
+    //
+
+    // Test 1
+    n = cross(u_x, ab);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    // If [-r,r]  and [min(p0,p1,p2),max(p0,p1,p2)] are disjoint then the Triangle and the AABB can't overlap
+    if( max3(p0,p1,p2) < -r || min3(p0,p1,p2) < r) return false;
+
+    // Test 2
+    n = cross(u_x, bc);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    if( max3(p0,p1,p2) < -r || min3(p0,p1,p2) < r) return false;
+
+    // Test 3
+    n = cross(u_x, ca);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    if( max3(p0,p1,p2) < -r || min3(p0,p1,p2) < r) return false;
+
+
+    // Axis 2 : (0,1,0)
+
+    n = cross(u_y, ab);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    if( max3(p0,p1,p2) < -r || min3(p0,p1,p2) < r) return false;
+
+    // Test 2
+    n = cross(u_y, bc);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    if( max3(p0,p1,p2) < -r || min3(p0,p1,p2) < r) return false;
+
+    // Test 3
+    n = cross(u_y, ca);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    if( max3(p0,p1,p2) < -r || min3(p0,p1,p2) < r) return false;
+
+
+    // Axis 3 : (0,0,1)
+
+    n = cross(u_z, ab);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    if( max3(p0,p1,p2) < -r || min3(p0, p1,p2) < r) return false;
+
+    // Test 2
+    n = cross(u_z, bc);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    if( max3(p0,p1,p2) < -r || min3(p0,p1,p2) < r) return false;
+
+    // Test 3
+    n = cross(u_z, ca);
+    p0 = dot(a, n);
+    p1 = dot(b, n);
+    p2 = dot(c, n);
+    r = r_x * abs(dot(u_x, n)) + r_y * abs(dot(u_y, n)) + r_z * abs(dot(u_z, n));
+    if( max3(p0,p1,p2) < -r || min3(p0,p1,p2) < r) return false;
+
+    // Now if the 9 above tests could not prove that there were no intersection,
+    // test the three axes corresponding to the face normals of the AABB
+
+    // [-r_x, r_x] and [min(a.x, b.x, center.x), max(a.x,b.x, center.x)] don't overlap
+    if(max3(a.x, b.x, c.x) < -r_x || min3(a.x, b.x, c.x) > r_x) return false;
+
+    if(max3(a.y, b.y, c.y) < -r_y || min3(a.y, b.y, c.y) > r_y) return false;
+
+    if(max3(a.z,b.z, c.z) < -r_z || min3(a.z, b.z, c.z) > r_z) return false;
+
+
+    // Finally, test the axis corresponding to the triangle face normal
+    Point normal = cross(ab, bc);
+    float d = dot(normal, a);
+    Plane p(normal,d);
+    return intersects(p);
 }
 
 float AABB::getVolume() {
@@ -305,8 +440,13 @@ polyscope::SurfaceMesh *AABB::getMesh() {
     return m_mesh;
 }
 
+Vector AABB::getHalfWidth() {
+    return Vector{m_radius[0],m_radius[1],m_radius[2]};
+}
 
-
+bool AABB::intersects(const BoundingVolume &boundingVolume) const noexcept {
+    return boundingVolume.intersectsBV(*this);
+}
 
 
 

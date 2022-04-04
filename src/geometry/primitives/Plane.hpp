@@ -85,9 +85,7 @@ public:
 
     bool intersects(const Intersectable &intersectable) const noexcept override;
 
-    bool intersects(const Sphere &sp) const noexcept override;
-
-    bool intersects(const AABB &aabb) const noexcept override;
+    bool intersects(const BoundingVolume &boundingVolume) const noexcept override;
 
     bool intersects(const Plane &plane) const noexcept override;
 

@@ -12,31 +12,23 @@
 #include "polyscope/point_cloud.h"
 
 
-Sphere::Sphere(const Point &p, float radius, bool realInstance) : BoundingVolume(realInstance), m_center(p), m_radius(radius)
+Sphere::Sphere(const Point &p, float radius, bool realInstance) :
+BoundingVolume(realInstance), m_center(p), m_radius(radius), m_SphereMesh(), m_PolyMesh(), m_isMeshSphere(true)
 {
     assert(m_radius>=0);
-}
-
-const Point &Sphere::getCenter() const{
-    return m_center;
 }
 
 float Sphere::getRadius() const{
     return m_radius;
 }
 
-bool Sphere::intersects(const Sphere &sp) const noexcept{
-    Vector v = m_center - sp.m_center;
-    float dist = norm2(v);
 
-    float radius_sum = m_radius + sp.m_radius;
-    return dist <= radius_sum*radius_sum;
-}
-
-Sphere::Sphere(const Point &p, bool realInstance) : BoundingVolume(realInstance), m_center(p), m_radius(0)
+Sphere::Sphere(const Point &p, bool realInstance) :
+BoundingVolume(realInstance), m_center(p), m_radius(0), m_SphereMesh(), m_PolyMesh(), m_isMeshSphere(true)
 {}
 
-Sphere::Sphere(const Point &p1, const Point &p2, bool realInstance) : BoundingVolume(realInstance)
+Sphere::Sphere(const Point &p1, const Point &p2, bool realInstance) :
+BoundingVolume(realInstance), m_center(), m_radius(), m_SphereMesh(), m_PolyMesh(), m_isMeshSphere(true)
 {
     if(p1!=p2)
     {
@@ -51,7 +43,8 @@ Sphere::Sphere(const Point &p1, const Point &p2, bool realInstance) : BoundingVo
     }
 }
 
-Sphere::Sphere(const Point &p1, const Point &p2, const Point &p3, bool realInstance) : BoundingVolume(realInstance)
+Sphere::Sphere(const Point &p1, const Point &p2, const Point &p3, bool realInstance) :
+BoundingVolume(realInstance), m_center(), m_radius(), m_SphereMesh(), m_PolyMesh(), m_isMeshSphere(true)
 {
 
 
@@ -111,7 +104,8 @@ Sphere::Sphere(const Point &p1, const Point &p2, const Point &p3, bool realInsta
 
 }
 
-Sphere::Sphere(const Point &p1, const Point &p2, const Point &p3, const Point &p4, bool realInstance) : BoundingVolume(realInstance)
+Sphere::Sphere(const Point &p1, const Point &p2, const Point &p3, const Point &p4, bool realInstance) :
+BoundingVolume(realInstance), m_center(), m_radius(), m_SphereMesh(), m_PolyMesh(), m_isMeshSphere(true)
 {
     Eigen::Matrix<float, 4,4> a_mat= {};
     Eigen::Matrix<float, 4,4>  c_mat;
@@ -160,13 +154,15 @@ Sphere::Sphere(const Point &p1, const Point &p2, const Point &p3, const Point &p
     // a=0 => the points are coplanar
 
     m_center = {dx/(2*a), dy/(2*a), dz/(2*a) };
-    m_radius = sqrtf(dx*dx + dy*dy + dz*dz - 4*a*c)/(2* std::abs(a));
+    m_radius = sqrtf(dx*dx + dy*dy + dz*dz - 4*a*c)/(2* abs(a));
 }
 
-Sphere::Sphere(bool realInstance): BoundingVolume(realInstance),m_center(Point::undefined()), m_radius(0)
+Sphere::Sphere(bool realInstance):
+BoundingVolume(realInstance),m_center(Point::undefined()), m_radius(0), m_SphereMesh(), m_PolyMesh(), m_isMeshSphere(true)
 {}
 
-Sphere::Sphere(const std::vector<Point> &points, bool realInstance) : BoundingVolume(realInstance)
+Sphere::Sphere(const std::vector<Point> &points, bool realInstance) :
+BoundingVolume(realInstance), m_center(), m_radius(), m_SphereMesh(), m_PolyMesh(), m_isMeshSphere(true)
 {
     unsigned int nbPoints = points.size();
     std::vector<Point> pts(points);
@@ -241,14 +237,8 @@ Sphere Sphere::minimalSphere(std::vector<Point> &pts, unsigned int nbPts, unsign
         }
     }
 
-}
+    return minSphere;
 
-bool Sphere::intersects(const AABB &aabb) const noexcept {
-    return aabb.intersects(*this);
-}
-
-bool Sphere::intersects(const Intersectable &intersectable) const noexcept {
-    return intersectable.intersects(*this);
 }
 
 float Sphere::getVolume()
@@ -361,7 +351,13 @@ bool Sphere::intersects(const Plane &plane) const noexcept {
 }
 
 bool Sphere::intersects(const Triangle &tri) const noexcept {
-    return tri.intersects(*this);
+    // Compute the closest point on triangle to the sphere center
+    Point p = tri.closestPointToPoint(m_center);
+
+    // Compute square distance to sphere center and compare to square radius
+    float dist2 = norm2(p-m_center);
+
+    return dist2 <= m_radius*m_radius;
 }
 
 
@@ -416,7 +412,6 @@ void Sphere::updateMesh() {
     }
     else
         m_PolyMesh->refresh();
-
 }
 
 void Sphere::constructMesh()
@@ -479,3 +474,28 @@ void Sphere::update(const Vector &t)
     }
 
 }
+
+Vector Sphere::getHalfWidth() {
+    return Vector{m_radius, m_radius,m_radius};
+}
+
+bool Sphere::intersectsBV(const Sphere &sp) const noexcept {
+    Vector v = m_center - sp.m_center;
+    float dist = norm2(v);
+
+    float radius_sum = m_radius + sp.m_radius;
+    return dist <= radius_sum*radius_sum;
+}
+
+bool Sphere::intersectsBV(const AABB &aabb) const noexcept {
+    return aabb.intersectsBV(*this);
+}
+
+bool Sphere::intersects(const BoundingVolume &boundingVolume) const noexcept {
+    return  boundingVolume.intersectsBV(*this);
+}
+
+const Point &Sphere::getCenter() const noexcept {
+    return m_center;
+}
+

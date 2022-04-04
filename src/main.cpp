@@ -5,27 +5,28 @@
 #include "geometry/primitives/Triangle.hpp"
 #include "geometry/primitives/Plane.hpp"
 #include "geometry/traits/Instantiable.hpp"
+#include "geometry/defs.hpp"
 #include <chrono>
 
 
 // == Initialize instances count
 unsigned int Instantiable::m_instances = 0;
 std::vector<Object> objects;
-std::vector<Vector> speeds;
 std::chrono::high_resolution_clock::time_point last_refresh = std::chrono::high_resolution_clock::now();
 
 
 bool show_bv = false;
 bool run_sim = false;
-
+bool compute_intersections = false;
+int depth_to_show = 0;
 
 void oneSimulationStep(float dt)
 {
 
-    for(auto i = 0; i < objects.size(); i++)
+    for(auto & object : objects)
     {
-        objects[i].update(speeds[i]*dt);
-        objects[i].getBoundingVolume()->setVisible(true);
+        object.update(dt);
+        object.showOctree(show_bv, depth_to_show);
     }
 }
 
@@ -36,12 +37,13 @@ void simulationCallback()
     if(ImGui::Checkbox("Show Bounding Volumes", &show_bv))
     {
         for(auto obj :objects)
-            obj.getBoundingVolume()->setVisible(show_bv);
+            obj.showOctree(show_bv, depth_to_show);
     }
 
-    if (ImGui::Button("Run"))
+    ImGui::InputInt("Depth to show", &depth_to_show);
+
+    if (ImGui::Checkbox("Run", &run_sim))
     {
-        run_sim= !run_sim;
         last_refresh = std::chrono::high_resolution_clock::now();
     }
 
@@ -56,9 +58,54 @@ void simulationCallback()
             oneSimulationStep((time_span.count()) / 1000.);
             last_refresh = t;
         }
+
+        if(compute_intersections)
+        {
+            // First everything back to green
+            for(const auto& obj : objects)
+                obj.setColor(GREEN_COLOR);
+
+            // Then Compute intersections
+            for(unsigned int i = 0; i<objects.size(); i++)
+            {
+                for(unsigned int j = i+1; j< objects.size(); j++)
+                {
+                    if(objects[i].intersects(objects[j]))
+                    {
+                        objects[i].setColor(RED_COLOR);
+                        objects[j].setColor(RED_COLOR);
+                    }
+                }
+
+            }
+        }
     }
 
+    if(ImGui::Checkbox("Check intersections", &compute_intersections))
+    {
+        // Register the checkbox
+        for(const auto& obj : objects)
+            obj.setColor(GREEN_COLOR);
 
+        // Compute intersections only if the button was checked or when simulation is running
+        if(compute_intersections)
+        {
+            // Compute intersections
+            for(unsigned int i = 0; i<objects.size(); i++)
+            {
+                for(unsigned int j = i+1; j< objects.size(); j++)
+                {
+                    if(objects[i].intersects(objects[j]))
+                    {
+                        objects[i].setColor(RED_COLOR);
+                        objects[j].setColor(RED_COLOR);
+                    }
+                }
+
+            }
+        }
+
+    }
 }
 
 int main(int argc, char **argv) {
@@ -71,43 +118,90 @@ int main(int argc, char **argv) {
     std::uniform_real_distribution<float> distr(-3, 3);
 
     // Load objects
-    //for(int i = 1; i<argc; i++)
-    //{
-        //objects.emplace_back(argv[i]);
-        /*auto t1 =new AABB(Point{3,3,3}, 2,2,2);
-        objects.emplace_back(t1->getMesh());
-        Vector v1{distr(eng), distr(eng), distr(eng)};
-        speeds.push_back(v1);
-
-        auto t2 =new AABB(Point{0,0,0}, 2,2,2);
-        objects.emplace_back(t2->getMesh());
-        Vector v2{distr(eng), distr(eng), distr(eng)};
-        speeds.push_back(v2);*/
-        //}
     for(int i=1; i<argc; i++)
     {
-        objects.push_back(Object(argv[i], SPHERE_ID));
-        Vector v1{distr(eng), distr(eng), distr(eng)};
-        speeds.push_back(v1);
+        Vector speed{distr(eng), distr(eng), distr(eng)};
+        objects.emplace_back(argv[i],speed);
     }
 
 
-    std::array<float,3> p1 = {0,0,0};
-    std::array<float,3> p2 = {0,1,0};
-    std::array<float,3> p3 = {0,0,1};
 
-    std::vector<std::array<float,3>> vertices = {p1,p2,p3};
-    std::vector<std::vector<unsigned int >> faces = {{0,1,2}};
-   // mesh = polyscope::registerSurfaceMesh("test", vertices,faces);
+    /*
+    std::random_device rd2;
+    std::default_random_engine eng2(rd());
+    std::uniform_int_distribution<unsigned int> distr2(10, 30);
+    std::vector<Triangle> triangles;
+    for(unsigned int i = 0; i<10; i++) {
+        Point p1 = {distr(eng), distr(eng), distr(eng)};
+        Point p2 = {distr(eng), distr(eng), distr(eng)};
+        Point p3 = {distr(eng), distr(eng), distr(eng)};
+        auto tri1 = Triangle(p1, p2, p3);
+        tri1.setVisible(true);
+        tri1.setColor(GREEN_COLOR);
+        triangles.push_back(tri1);
 
+        std::cout << "Triangle " << tri1.m_mesh->name << std::endl;
+        std::cout << "Point p" << 3 * i << " = " << p1 << ";" << std::endl;
+        std::cout << "Point p" << 3 * i + 1 << " = " << p2 << ";" << std::endl;
+        std::cout << "Point p" << 3 * i + 2 << " = " << p3 << ";" << std::endl;
 
-    std::array<float,3> p4 = {0,0,0};
-    std::array<float,3> p5 = {0,1,0};
-    std::array<float,3> p6 = {0,0,1};
+    }
 
-    std::vector<std::array<float,3>> vertices2 = {p4,p5,p6};
-    std::vector<std::vector<unsigned int >> faces2 = {{0,1,2}};
-    //polyscope::registerSurfaceMesh("t2", vertices2, faces2);
+    for(unsigned int i =0; i< triangles.size(); i++)
+    {
+        for(unsigned int j=i+1; j<triangles.size(); j++)
+        {
+            if(triangles[i].intersects(triangles[j]))
+            {
+                triangles[i].setColor(RED_COLOR);
+                triangles[j].setColor(RED_COLOR);
+
+                std::cout << "Triangle " << triangles[i].m_mesh->name << " intersects triangle " << triangles[j].m_mesh->name << std::endl;
+                //triangles[i].updateMesh();
+                //triangles[j].updateMesh();
+            }
+        }
+    }*/
+
+    /*Point p1 = {distr(eng),distr(eng),distr(eng)};
+    Point p2 = {distr(eng),distr(eng),distr(eng)};
+    Point p3 = {distr(eng),distr(eng),distr(eng)};
+    Triangle t1 = Triangle(p1,p2,p3);
+    t1.setVisible(true);
+    t1.setColor(GREEN_COLOR);
+
+    Point p4{1,0,0};
+    Point p5{-1,-1,-2};
+    Point p6{-1,2,3};
+    Triangle t2 = Triangle(p4,p5,p6);
+    t2.setVisible(true);
+    t2.setColor(GREEN_COLOR);
+
+    if(t1.intersects(t2))
+    {
+        t1.setColor(RED_COLOR);
+        t2.setColor(RED_COLOR);
+    }*/
+
+    /*Point p18 = {-2.01937, 2.45639, -1.50424};
+    Point p19 = {2.23096, 1.8202, -1.95515};
+    Point p20 = {1.83384, -0.577413, -2.57916};
+    Triangle t1(p18,p19,p20);
+    t1.setVisible(true);
+    t1.setColor(GREEN_COLOR);
+
+    Point p6 = {1.53023, 2.51265, 2.16773};
+    Point p7 = {1.00514, -2.66857, -0.705039};
+    Point p8 = {0.412282, -0.778774, -2.84686};
+    Triangle t2(p6,p7,p8);
+    t2.setVisible(true);
+    t2.setColor(GREEN_COLOR);
+
+    if(t1.intersects(t2))
+    {
+        t1.setColor(RED_COLOR);
+        t2.setColor(RED_COLOR);
+    }*/
 
     // Adding the callback
     polyscope::state::userCallback = simulationCallback;

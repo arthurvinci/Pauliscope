@@ -68,12 +68,21 @@ public:
 
     bool intersects(Intersectable const& intersectable) const noexcept override;
 
-    bool intersects(AABB const& aabb) const noexcept override;
+    bool intersectsBV(AABB const& aabb) const noexcept override;
 
-    bool intersects(Sphere const& sp) const noexcept override;
+    bool intersectsBV(Sphere const& sp) const noexcept override;
+
+    bool intersects(const BoundingVolume &boundingVolume) const noexcept override;
 
     bool intersects(const Plane &plane) const noexcept override;
 
+    /**
+     *
+     * @param aabb
+     * @return
+     *
+     * @more using Akenine-Möller approach https://dl.acm.org/doi/10.1080/10867651.2001.10487535
+     */
     bool intersects(const Triangle &tri) const noexcept override;
 
     void update(Eigen::Matrix3f const& r, Vector const& t) override;
@@ -95,6 +104,9 @@ public:
     void setVisible(bool isVisible) noexcept override;
 
     polyscope::SurfaceMesh* getMesh();
+
+    Vector getHalfWidth() override;
+
 
 
 private:

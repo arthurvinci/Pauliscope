@@ -86,15 +86,13 @@ public:
     */
     bool isInside(Point const& p);
 
-    const Point &getCenter() const;
-
     float getRadius() const;
 
-    bool intersects(Sphere const& sp) const noexcept override;
+    bool intersectsBV(const Sphere &sp) const noexcept override;
 
-    bool intersects(class AABB const& sp) const noexcept override;
+    bool intersectsBV(const AABB &aabb) const noexcept override;
 
-    bool intersects(Intersectable const& intersectable) const noexcept override;
+    bool intersects(const BoundingVolume &boundingVolume) const noexcept override;
 
     bool intersects(const Plane &plane) const noexcept override;
 
@@ -117,6 +115,10 @@ public:
     void update(const Vector &t) override;
 
     void constructPolyMesh();
+
+    Vector getHalfWidth() override;
+
+    const Point &getCenter() const noexcept;
 
 private:
     Point m_center;

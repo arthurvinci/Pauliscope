@@ -11,9 +11,10 @@
 #include "../traits/Intersectable.hpp"
 #include "../traits/Displayable.hpp"
 
-class Triangle : public Intersectable
+class Triangle : public Intersectable, public Displayable
 {
 public:
+    polyscope::SurfaceMesh *m_mesh;
     /**
      * @brief An empty `Triangle` cannot be instantiated
      */
@@ -22,22 +23,11 @@ public:
     /**
      * @brief Default copy constructor is deleted because we should not be able to copy a triangle
      */
-    Triangle(Triangle const& Triangle) = delete;
+    Triangle(Triangle const& Triangle) = default;
 
-    Triangle(Point * p1, Point * p2, Point * p3, const std::string& name);
+    Triangle(Point &p1, Point &p2, Point &p3);
 
     Point closestPointToPoint(Point const& p) const noexcept;
-
-    bool intersects(const Sphere &sp) const noexcept override;
-
-    /**
-     *
-     * @param aabb
-     * @return
-     *
-     * @more using Akenine-Möller approach https://dl.acm.org/doi/10.1080/10867651.2001.10487535
-     */
-    bool intersects(const AABB &aabb) const noexcept override;
 
     bool intersects(const Plane &plane) const noexcept override;
 
@@ -52,6 +42,15 @@ public:
 
     bool intersects(const Intersectable &intersectable) const noexcept override;
 
+    bool intersects(const BoundingVolume &boundingVolume) const noexcept override;
+
+    Vector getPoint(unsigned int i) const;
+
+    void setColor(int r, int g, int b) const noexcept override;
+
+    void setVisible(bool isVisible) noexcept override;
+
+    void updateMesh() override;
 
 
 protected:
@@ -60,7 +59,9 @@ protected:
 
 private:
     // Using array of pointers to improve space complexity when construct triangles from an object
-    std::array<Point*,3> m_pts;
+    std::array<Point,3> m_pts;
+    bool m_needsMeshUpdate;
+
 
 };
 

@@ -67,13 +67,6 @@ bool Plane::intersects(const Intersectable &intersectable) const noexcept {
     return intersectable.intersects(*this);
 }
 
-bool Plane::intersects(const Sphere &sp) const noexcept {
-    return sp.intersects(*this);
-}
-
-bool Plane::intersects(const AABB &aabb) const noexcept {
-    return aabb.intersects(*this);
-}
 
 bool Plane::intersects(const Plane &plane) const noexcept
 {
@@ -100,4 +93,8 @@ std::tuple<Point, Vector> Plane::getIntersectionLine(const Plane &otherPlane)
     Point p = cross( m_d*otherPlane.m_normal - otherPlane.m_d*m_normal, line_dir);
     auto tuple = std::make_tuple(p,line_dir);
     return tuple;
+}
+
+bool Plane::intersects(const BoundingVolume &boundingVolume) const noexcept {
+    return boundingVolume.intersects(*this);
 }
