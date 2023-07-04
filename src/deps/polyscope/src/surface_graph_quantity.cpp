@@ -63,7 +63,7 @@ void SurfaceGraphQuantity::setUniforms() {
 
 void SurfaceGraphQuantity::createPrograms() {
 
-  { // Point program
+  { // Point2 program
     std::vector<std::string> rules = parent.addStructureRules({"SHADE_BASECOLOR"});
     if (parent.wantsCullPosition()) {
       rules.push_back("SPHERE_CULLPOS_FROM_CENTER");

@@ -14,7 +14,7 @@ PointCloudScalarQuantity::PointCloudScalarQuantity(std::string name, const std::
 
 {
   if (values_.size() != parent.points.size()) {
-    polyscope::error("Point cloud scalar quantity " + name + " does not have same number of values (" +
+    polyscope::error("Point2 cloud scalar quantity " + name + " does not have same number of values (" +
                      std::to_string(values_.size()) + ") as point cloud size (" + std::to_string(parent.points.size()) +
                      ")");
   }

@@ -7982,7 +7982,7 @@ class basic_json
     @brief create a MessagePack serialization of a given JSON value
 
     Serializes a given JSON value @a j to a byte vector using the CBOR (Concise
-    Binary Object Representation) serialization format. CBOR is a binary
+    Binary test Representation) serialization format. CBOR is a binary
     serialization format which aims to be more compact than JSON itself, yet
     more efficient to parse.
 
@@ -8012,7 +8012,7 @@ class basic_json
     @brief create a JSON value from a byte vector in CBOR format
 
     Deserializes a given byte vector @a v to a JSON value using the CBOR
-    (Concise Binary Object Representation) serialization format.
+    (Concise Binary test Representation) serialization format.
 
     @param[in] v  a byte vector in CBOR format
     @param[in] start_index the index to start reading from @a v (0 by default)

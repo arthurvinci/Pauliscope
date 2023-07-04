@@ -18,7 +18,7 @@
 namespace polyscope {
 
 // Initialize statics
-const std::string PointCloud::structureTypeName = "Point Cloud";
+const std::string PointCloud::structureTypeName = "Point2 Cloud";
 
 // Constructor
 PointCloud::PointCloud(std::string name, std::vector<glm::vec3> points_)
@@ -242,7 +242,7 @@ void PointCloud::buildPickUI(size_t localPickID) {
 
 void PointCloud::buildCustomUI() {
   ImGui::Text("# points: %lld", static_cast<long long int>(points.size()));
-  if (ImGui::ColorEdit3("Point color", &pointColor.get()[0], ImGuiColorEditFlags_NoInputs)) {
+  if (ImGui::ColorEdit3("Point2 color", &pointColor.get()[0], ImGuiColorEditFlags_NoInputs)) {
     setPointColor(getPointColor());
   }
   ImGui::SameLine();
@@ -257,7 +257,7 @@ void PointCloud::buildCustomUI() {
 void PointCloud::buildCustomOptionsUI() {
 
 
-  if (ImGui::BeginMenu("Point Render Mode")) {
+  if (ImGui::BeginMenu("Point2 Render Mode")) {
 
     for (const PointRenderMode& m : {PointRenderMode::Sphere, PointRenderMode::Quad}) {
       bool selected = (m == getPointRenderMode());
